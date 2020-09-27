@@ -1,0 +1,249 @@
+---
+title: "tppp"
+author: "vg"
+date: "26/09/2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Question 1 
+```{r}
+tab = read.table("immo.txt", header = TRUE,sep = ";")
+tab
+```
+
+
+
+Price Value and Surface 
+```{r}
+plot(tab)
+```
+  Matrice de correlation
+```{r}
+cor(tab)
+```
+  
+
+Les coeffecients de correlations sont proches de 1,lesdonnées sont très fortement corrélés
+
+\mathbf{First model using OLS}
+
+```{r}
+Y = tab$prix
+modreg = lm(prix~.,data = tab)
+summary(modreg)
+```
+
+```{r}
+betah = modreg$coefficients
+betah
+typeof(betah)
+Bh = c(betah[1:3])
+Bh = as.matrix(Bh)
+dim(t(Bh))
+
+```
+
+```{r}
+X = tab[c(1:2)]
+X = cbind(rep(1,nrow(X)),X)
+names(X)[1] = "cte"
+X = as.matrix(X)
+X
+dim(X)
+```
+
+Calcul de Y hat
+```{r}
+Yhat = X%*%Bh
+Yhat
+
+{plot(Y,Yhat,panel.first = grid()) 
+abline(0,1,col = 2,lty =2)}
+
+```
+
+difference predicted observation
+```{r}
+{plot(Y - Yhat)
+abline(0,0,col = 2,lty = 2)}
+```
+
+Question d
+```{r}
+meany = mean(Y)
+R2 = sum((Yhat-meany)**2)/sum((Y-meany)**2)
+
+A = t(X)%*%X
+B = t(X)%*%Y
+beta2 = solve(A,B)
+resb = cbind(beta2,Bh,beta2-Bh)
+resb = as.table(resb)
+colnames(resb)[1] = "Betah2"
+colnames(resb)[2] = "Betah"
+colnames(resb)[3] = "Betah2-betah"
+resb
+```
+
+
+################################################################################################################################################################""
+Exercice 2
+
+a)
+
+```{r}
+tab = read.table("Icecreamdata.txt",header = T,sep = ";")
+tab
+```
+```{r}
+nobs = nrow(tab)
+nobs
+```
+
+```{r}
+plot(tab)
+```
+```{r}
+cor(tab)
+```
+Regarding the previous and the correlation matrix we can say there aren't a linear relationship between them. However we can guess that the a correlation between the consumption and the temperature because $r = 0.775$  and the associated scatter plot follow a linear trend.
+
+\mathbf{Formalization of the Problem}
+
+We want to build a linear model between the ice consumption and the other co variables. Let's set:
+$Y = (cons_i) $ avec $1 \leq i \leq 30$
+$X = (income_i, price_i, temp_i)$ avec $1 \leq i \leq 30$
+$\beta = (\beta_0 ,\beta_1,\beta_2,\beta_3) $ 
+
+```{r}
+Y = tab$cons
+X = tab[2:4]
+X = cbind(rep(1,nrow(X)),X)
+names(X)[1] = "cte"
+X
+```
+
+We are looking for $\beta$ so that $X\beta = Y$ 
+
+b) \mathbf{Parameters estimation}
+```{r}
+modreg = lm(cons ~ ., data = tab)
+
+summary(modreg)
+
+```
+
+```{r}
+betah = modreg$coefficients
+betah
+```
+
+The statistic test under $\mathbf{H}_0$ show that the variable "price" is less meaningful than "temp" and "income".
+
+
+*** means we reject the test for error equal to 0.0001, ** for errors more or equal to 0.01 and * for errors more or equal to 0.05. 
+
+Variable selection
+```{r}
+tab2 = tab
+tab2 = tab2[-3]
+tab2
+modreg = lm(cons ~ ., data = tab2)
+summary(modreg)
+```
+```{r}
+betah2 = modreg$coefficients
+Bh2 = c(betah2[1:3])
+Bh2 = as.matrix(Bh2)
+Bh2
+```
+
+
+```{r}
+Y2 = tab2$cons
+X2 = tab2[2:3]
+X2 = cbind(rep(1,nrow(X2)),X2)
+names(X2)[1] = "cte"
+
+
+X2=as.matrix(X2)
+X2
+```
+
+
+
+Calcul de $\^{Y}$
+```{r}
+Yhat = X2%*%Bh2
+Yhat
+
+{plot(Y,Yhat,panel.first = grid()) 
+abline(0,1,col = 2,lty =2)}
+
+```
+Computation using matrix.
+We assume that $X_2^TX_2$ is invertibe
+```{r}
+A = t(X2)%*%X2
+B = t(X2)%*%Y2
+beta2 = solve(A,B)
+beta2
+```
+Computation of the $\^{Y}$
+```{r}
+Yhat = X2%*%beta2
+{plot(Y,Yhat,panel.first = grid()) 
+abline(0,1,col = 2,lty =2)}
+
+```
+Intervalle de confiance 
+
+```{r}
+confint(modreg,level = 1-2*0.05)
+confint(modreg,level = 1-2*0.01)
+confint(modreg,level = 1-2*0.001)
+
+```
+
+Predicted with $5%$
+```{r}
+newd =  data.frame(cbind((c(91,92,95,97)),(c(27,30,52,75))))
+names(newd)[1:2] = c("income","temp")
+yp = predict(modreg, newdata = newd, interval = "prediction",level = 0.05)
+yp
+library("plot3D")
+plot(newd$income,yp[,1])
+scatter3D(newd$income,newd$temp,yp[,1])
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+#install.packages("leaps", dependencies = T)
+#install.packages("matlib", dependencies = T)
+library(leaps)
+choix = regsubsets(cons ~ ., data = tab, nbest = 1, nvmax = 4)
+summary(choix)
+#plot(choix, scale = "bic")
+#plot(choix, scale = "Cp")
+choix
+```
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
