@@ -1,0 +1,32 @@
+---
+title: "Ex4"
+author: "vhinyg"
+date: "27/09/2020"
+output: html_document
+---
+
+
+
+load data 
+```{r}
+tab = read.table("cellphonedata.txt", header = T,sep = ";")
+
+head(tab)
+```
+plot data 
+
+```{r}
+plot((tab$year-2014)^2,(tab$EndUsers))
+tab$year = as.double(tab$year)
+tab$EndUsers = as.double(tab$EndUsers)
+cor(tab)
+```
+Vu le scatter plot et la valeur de coefficient de correlation $r = 0.00392 $ un regression linéaire sur l'ensemble des données n'est pas adaptées.
+
+
+```{r}
+modreg = lm(EndUsers ~ . , data = tab)
+summary(modreg)
+```
+
+
